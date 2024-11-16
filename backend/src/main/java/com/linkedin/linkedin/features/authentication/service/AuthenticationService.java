@@ -40,7 +40,7 @@ public class AuthenticationService {
 	public AuthenticationResponseBody login(AuthenticationRequestBody loginRequestBody) {
 		log.info("Login Request, email: {}", loginRequestBody.getEmail());
 		AuthenticationUser user = getUser(loginRequestBody.getEmail());
-		if(!encoder.matches(loginRequestBody.getPassowrd(), user.getPassword())) {
+		if(!encoder.matches(loginRequestBody.getPassword(), user.getPassword())) {
 			log.info(" User: {} Password is incorrect", loginRequestBody.getEmail());
 			throw new IllegalArgumentException("Password is incorrect");
 		}
@@ -104,7 +104,7 @@ public class AuthenticationService {
 	
 	public AuthenticationResponseBody register(AuthenticationRequestBody registerRequestBody) {
 		log.info("Regiseration Request, email: {}", registerRequestBody.getEmail());
-        AuthenticationUser user = authUserRepo.save(new AuthenticationUser(registerRequestBody.getEmail(), encoder.encode(registerRequestBody.getPassowrd())));
+        AuthenticationUser user = authUserRepo.save(new AuthenticationUser(registerRequestBody.getEmail(), encoder.encode(registerRequestBody.getPassword())));
 
         String emailVerificationToken = generateEmailVerificationToken();
         String hashedToken = encoder.encode(emailVerificationToken);

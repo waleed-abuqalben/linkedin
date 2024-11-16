@@ -14,5 +14,5 @@ public class AuthenticationRequestBody {
 	private String email;
 	
 	@NotBlank(message = "password is required")
-	private String passowrd;
+	private String password;
 }
