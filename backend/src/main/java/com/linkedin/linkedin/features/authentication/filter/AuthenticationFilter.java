@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import com.linkedin.linkedin.features.authentication.model.AuthenticationUser;
@@ -19,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
+//@Order(2)
 public class AuthenticationFilter extends HttpFilter{
 	 private final JsonWebToken jsonWebToken;
 	 private final AuthenticationService authenticationService; 
@@ -32,7 +34,6 @@ public class AuthenticationFilter extends HttpFilter{
 	 @Override
 	 protected void doFilter(HttpServletRequest request, 
 			 HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
-		    
 	    response.addHeader("Access-Control-Allow-Origin", "*");
         response.addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
         response.addHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
@@ -75,11 +76,5 @@ public class AuthenticationFilter extends HttpFilter{
         
         
 	 }
-	 
-	  
-	  
-	  
-	  
-
 	
 }

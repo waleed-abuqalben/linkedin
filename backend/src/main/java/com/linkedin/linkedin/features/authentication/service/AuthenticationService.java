@@ -1,12 +1,9 @@
 package com.linkedin.linkedin.features.authentication.service;
 
-import java.io.UnsupportedEncodingException;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.linkedin.linkedin.features.authentication.dto.AuthenticationRequestBody;
@@ -17,13 +14,14 @@ import com.linkedin.linkedin.features.authentication.utils.EmailService;
 import com.linkedin.linkedin.features.authentication.utils.Encoder;
 import com.linkedin.linkedin.features.authentication.utils.JsonWebToken;
 
-import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RequiredArgsConstructor
 @Service
+@Slf4j
 public class AuthenticationService {
-	private static final Logger logger = LoggerFactory.getLogger(AuthenticationService.class);
+	
 	private final int durationInMinutes = 3;
 	private final AuthenticationUserRepository authUserRepo;
 	private final Encoder encoder;
@@ -33,20 +31,21 @@ public class AuthenticationService {
 	
 	
 	public AuthenticationUser getUser(String email) {
-		return authUserRepo.findByEmail(email)
-			.orElseThrow(() -> //TODO: RecourseNotFound
-			new IllegalArgumentException("user not found"));
+  		return authUserRepo.findByEmail(email).orElseThrow(() -> {//TODO: RecourseNotFound
+  			 log.info("User: {} not found", email);
+			return new IllegalArgumentException(String.format("User: %s not found", email)); 
+		});
 	}
 	
 	public AuthenticationResponseBody login(AuthenticationRequestBody loginRequestBody) {
-		AuthenticationUser user = //TODO: getUser(requestBody.getEmail());
-			authUserRepo.findByEmail(loginRequestBody.getEmail())
-				.orElseThrow(() -> //TODO: RecourseNotFound
-				new IllegalArgumentException("user not found"));
+		log.info("Login Request, email: {}", loginRequestBody.getEmail());
+		AuthenticationUser user = getUser(loginRequestBody.getEmail());
 		if(!encoder.matches(loginRequestBody.getPassowrd(), user.getPassword())) {
+			log.info(" User: {} Password is incorrect", loginRequestBody.getEmail());
 			throw new IllegalArgumentException("Password is incorrect");
 		}
 		String token = jsonWebToken.generateToken(loginRequestBody.getEmail());
+		log.info("User: {} login success", loginRequestBody.getEmail());
 		return new AuthenticationResponseBody(token, "Authentication success");
 		
 	}
@@ -74,9 +73,10 @@ public class AuthenticationService {
                             + "Enter this code to verify your email: " + "%s\n\n" + "The code will expire in " + "%s" + " minutes.",
                     emailVerificationToken, durationInMinutes);
             try {
+            	log.info("Send user: {} verification token", email);
                 emailService.sendEmail(email, subject, body);
             } catch (Exception e) {
-                logger.info("Error while sending email: {}", e.getMessage());
+                log.info("Error while sending email: {}", e.getMessage());
             }
         } else {
             throw new IllegalArgumentException("Email verification token failed, or email is already verified.");
@@ -84,7 +84,7 @@ public class AuthenticationService {
     }
 
 	 public void validateEmailVerificationToken(String token, String email) {
-		    logger.info("token: {}, email: {}", token, email);
+		    log.info("Validate user: {} token", email);
 	        Optional<AuthenticationUser> user = authUserRepo.findByEmail(email);
 	        if (user.isPresent() 
 	        		&& encoder.matches(token, user.get().getEmailVerificationToken()) 
@@ -94,6 +94,7 @@ public class AuthenticationService {
 	            user.get().setEmailVerificationToken(null);
 	            user.get().setEmailVerificationTokenExpiryDate(null);
 	            authUserRepo.save(user.get());
+	            log.info("User: {} has valid token", email);
 	        } else if (user.isPresent() && encoder.matches(token, user.get().getEmailVerificationToken()) && user.get().getEmailVerificationTokenExpiryDate().isBefore(LocalDateTime.now())) {
 	            throw new IllegalArgumentException("Email verification token expired.");
 	        } else {
@@ -102,6 +103,7 @@ public class AuthenticationService {
 	    }
 	
 	public AuthenticationResponseBody register(AuthenticationRequestBody registerRequestBody) {
+		log.info("Regiseration Request, email: {}", registerRequestBody.getEmail());
         AuthenticationUser user = authUserRepo.save(new AuthenticationUser(registerRequestBody.getEmail(), encoder.encode(registerRequestBody.getPassowrd())));
 
         String emailVerificationToken = generateEmailVerificationToken();
@@ -118,10 +120,12 @@ public class AuthenticationService {
                         Enter this code to verify your email: %s. The code will expire in %s minutes.""",
                 emailVerificationToken, durationInMinutes); // Include the token in the message body
         try {
+        	log.info("Send user: {} regidteration verification token", registerRequestBody.getEmail());
             emailService.sendEmail(registerRequestBody.getEmail(), subject, body);
         } catch (Exception e) {
-            logger.info("Error while sending email: {}", e.getMessage());
+            log.info("Error while sending email: {}", e.getMessage());
         }
+        log.info("User: {} registered successfully", registerRequestBody.getEmail());
         String authToken = jsonWebToken.generateToken(registerRequestBody.getEmail());
         return new AuthenticationResponseBody(authToken, "User registered successfully.");
     }
@@ -144,7 +148,7 @@ public class AuthenticationService {
             try {
                 emailService.sendEmail(email, subject, body);
             } catch (Exception e) {
-                logger.info("Error while sending email: {}", e.getMessage());
+                log.info("Error while sending email: {}", e.getMessage());
             }
         } else {
             throw new IllegalArgumentException("User not found.");
