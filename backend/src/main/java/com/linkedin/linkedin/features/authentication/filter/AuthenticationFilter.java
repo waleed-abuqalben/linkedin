@@ -1,16 +1,17 @@
 package com.linkedin.linkedin.features.authentication.filter;
 
-import java.io.IOException;
+
+
 import java.util.Arrays;
 import java.util.List;
 
-import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import com.linkedin.linkedin.features.authentication.model.AuthenticationUser;
 import com.linkedin.linkedin.features.authentication.service.AuthenticationService;
 import com.linkedin.linkedin.features.authentication.utils.JsonWebToken;
 
+import java.io.IOException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpFilter;
@@ -31,6 +32,7 @@ public class AuthenticationFilter extends HttpFilter{
 	            "/api/v1/authentication/reset-password"
 	    );
 	 
+	 
 	 @Override
 	 protected void doFilter(HttpServletRequest request, 
 			 HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
@@ -49,6 +51,8 @@ public class AuthenticationFilter extends HttpFilter{
             chain.doFilter(request, response);//do nothing [continue]
             return;
         }
+
+        
         
         try {
         	

@@ -14,6 +14,9 @@ import com.linkedin.linkedin.features.authentication.utils.EmailService;
 import com.linkedin.linkedin.features.authentication.utils.Encoder;
 import com.linkedin.linkedin.features.authentication.utils.JsonWebToken;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,8 +30,12 @@ public class AuthenticationService {
 	private final Encoder encoder;
 	private final JsonWebToken jsonWebToken;
 	private final EmailService emailService;
-
 	
+	@PersistenceContext
+	EntityManager entityManager;
+
+	/*@PersistenceContext
+    private EntityManager entityManager;*/
 	
 	public AuthenticationUser getUser(String email) {
   		return authUserRepo.findByEmail(email).orElseThrow(() -> {//TODO: RecourseNotFound
@@ -168,8 +175,36 @@ public class AuthenticationService {
             throw new IllegalArgumentException("Password reset token failed.");
         }
     }
+
+	public AuthenticationUser updateUserProfile(
+			Long userId, String firstName,
+			String lastName, String company,
+			String position, String location) {
+		 AuthenticationUser user = authUserRepo.findById(userId)
+				 .orElseThrow(() -> new RuntimeException("User not found"));
+         
+		 if (firstName != null) user.setFirstName(firstName);
+         if (lastName != null) user.setLastName(lastName);
+         if (company != null) user.setCompany(company);
+         if (position != null) user.setPosition(position);
+         if (location != null) user.setLocation(location);
+        return authUserRepo.save(user);
+    }
+	
+	@Transactional
+    public void deleteUser(Long userId) { 
+    	AuthenticationUser user = entityManager.find(AuthenticationUser.class, userId);
+    	if(user != null) {
+    		entityManager.createNativeQuery("DELETE FROM posts_likes WHERE user_id = :userId")
+    		.setParameter("userId", userId)
+    		.executeUpdate();
+    		authUserRepo.deleteById(userId);
+    	}
+    }
+	
+}
 	
 
 	
 	
-}
+
